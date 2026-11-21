@@ -414,6 +414,9 @@ def build_classification():
             continue
         m = r.config or {}
         sub['account_types'][r.code] = {
+            # ``label`` is the display name (renameable); ``code`` stays the key
+            # that accounts store, so a rename never invalidates a saved row.
+            'label': m.get('label') or r.name or r.code,
             'channels': list(m.get('channels') or ['ledger_only']),
             'default_channel': m.get('default_channel') or (m.get('channels') or ['ledger_only'])[0],
             'entity': m.get('entity') or 'none',

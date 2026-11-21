@@ -62,6 +62,37 @@
                     <button class="btn btn-info text-dark fw-bold"><i class="bi bi-plus-lg me-1"></i>Add</button>
                 </div>
             </div>
+            {# Account-type behaviour: which channels and linked party the type allows.
+               Only meaningful when LEVEL = Account Type. #}
+            <div class="row g-2 align-items-end mt-1" id="leafConfigWrap" style="display:none;">
+                <div class="col-md-6">
+                    <label class="text-white-50 small fw-bold mb-1">CHANNEL(S) THIS TYPE MAY USE</label>
+                    <div class="d-flex flex-wrap gap-3">
+                        {% for ch, chl in channel_labels.items() %}
+                        <label class="form-check mb-0 small text-white-50">
+                            <input class="form-check-input" type="checkbox" name="channels" value="{{ ch }}">
+                            <span class="form-check-label">{{ chl }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="text-white-50 small fw-bold mb-1">DEFAULT CHANNEL</label>
+                    <select name="default_channel" class="form-select bg-dark text-white border-secondary">
+                        {% for ch, chl in channel_labels.items() %}
+                        <option value="{{ ch }}">{{ chl }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="text-white-50 small fw-bold mb-1">REQUIRED LINKED PARTY</label>
+                    <select name="entity" class="form-select bg-dark text-white border-secondary">
+                        {% for e, el in entity_labels.items() %}
+                        <option value="{{ e }}">{{ el }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
         </form>
         {% else %}
         <form method="POST" action="{{ url_for('add_item_definition') }}">
@@ -288,6 +319,8 @@ function defKindChange() {
     const k = document.getElementById('defKind').value;
     document.getElementById('parentCatWrap').style.display = k === 'subcategory' ? '' : 'none';
     document.getElementById('parentSubWrap').style.display = k === 'account_type' ? '' : 'none';
+    const cfg = document.getElementById('leafConfigWrap');
+    if (cfg) cfg.style.display = k === 'account_type' ? '' : 'none';
     setParentCode();
 }
 function setParentCode() {

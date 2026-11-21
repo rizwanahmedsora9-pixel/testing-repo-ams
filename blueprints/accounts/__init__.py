@@ -9,6 +9,7 @@ from .accounts_crud import *  # noqa
 from .transactions import *  # noqa
 from .loans import *  # noqa
 from .kpis import *  # noqa
+from .account_type_master import *  # noqa
 # Classification registry + shared form logic are imported by the create/edit
 # views; imported here so they are part of the package namespace.
 from . import classification, account_form  # noqa: F401

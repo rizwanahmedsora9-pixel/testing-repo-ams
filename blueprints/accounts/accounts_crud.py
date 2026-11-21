@@ -184,6 +184,8 @@ def add_account():
         clients=_active_clients(),
         suppliers=_active_suppliers(),
         today=pk_today().strftime('%Y-%m-%d'),
+        # Enables the inline "New Account Type" creator in the form partial.
+        can_manage_master=_account_master_permission_ok(),
     )
 
 
@@ -435,6 +437,8 @@ def edit_account(account_id):
         suppliers=_active_suppliers(),
         calculated_balance=calculated,
         today=pk_today().strftime('%Y-%m-%d'),
+        # Enables the inline "New Account Type" creator in the form partial.
+        can_manage_master=_account_master_permission_ok(),
     )
 
 

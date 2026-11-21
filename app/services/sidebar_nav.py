@@ -255,6 +255,18 @@ SIDEBAR_LINKS: Tuple[NavLink, ...] = (
         description="Financial accounts dashboard.",
     ),
     NavLink(
+        key="account_types",
+        label="Account Types",
+        icon="bi-diagram-3",
+        endpoint="accounts.account_types_page",
+        fallback_url="/accounts/account-types",
+        exact=("/accounts/account-types",),
+        prefix=("/accounts/account-types",),
+        perm=_only("can_manage_accounts"),
+        default_category="accounts",
+        description="Create and edit account types (cash, bank, wallet, ledger) and their linked parties.",
+    ),
+    NavLink(
         key="cash_flow",
         label="Cash Flow",
         icon="bi-water",

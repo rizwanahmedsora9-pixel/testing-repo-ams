@@ -143,6 +143,77 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // ---- Quick Add Account Type -----------------------------------------
+    // A type lives under a subcategory, so the panel needs one picked first.
+    const btnTypeToggle = document.getElementById('btnQuickAddType');
+    const typePanel = document.getElementById('panelQuickAddType');
+    const typeName = document.getElementById('quickTypeName');
+    const btnSaveType = document.getElementById('btnSaveQuickType');
+    const typeErr = document.getElementById('quickTypeErr');
+    const subSelect = document.getElementById('class_subcategory');
+
+    function addTypeError(msg) {
+        typeErr.textContent = msg || 'Choose a category and subcategory first.';
+    }
+
+    if (btnTypeToggle && typePanel) {
+        btnTypeToggle.addEventListener('click', function () {
+            typePanel.classList.toggle('d-none');
+            if (!typePanel.classList.contains('d-none') && typeName) typeName.focus();
+        });
+    }
+
+    if (btnSaveType && typeName) {
+        btnSaveType.addEventListener('click', function () {
+            typeErr.textContent = '';
+            const sub = subSelect ? subSelect.value : '';
+            const name = (typeName.value || '').trim();
+            if (!sub) { addTypeError('Pick a Category and Subcategory above — a new account type is created under that subcategory.'); return; }
+            if (!name) { addTypeError('Please enter an account type name.'); return; }
+            const channels = Array.prototype.slice
+                .call(document.querySelectorAll('#quickTypeChannels input:checked'))
+                .map(function (i) { return i.value; });
+            if (!channels.length) { addTypeError('Tick at least one channel.'); return; }
+
+            btnSaveType.disabled = true;
+            fetch("{{ url_for('accounts.api_add_account_type') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': {{ (csrf_token or '')|tojson }}
+                },
+                body: JSON.stringify({
+                    class_subcategory: sub,
+                    name: name,
+                    channels: channels,
+                    default_channel: (document.getElementById('quickTypeDefault') || {}).value,
+                    entity: (document.getElementById('quickTypeEntity') || {}).value
+                })
+            })
+            .then(function (r) { return r.json().then(function (d) {
+                if (!r.ok || !d.ok) throw new Error(d.error || 'Could not add the account type.');
+                return d;
+            }); })
+            .then(function (data) {
+                // Teach the form engine about the new leaf (channel + linked
+                // party behaviour), then select it so the rest of the form
+                // updates: Channel dropdown, detail panels, live preview.
+                const created = data.account_type || {};
+                if (window.AMSAccountForm) {
+                    window.AMSAccountForm.registerAccountType(created);
+                    window.AMSAccountForm.selectAccountType(created.code);
+                }
+                typeName.value = '';
+                typePanel.classList.add('d-none');
+                document.querySelectorAll('#quickTypeChannels input:checked')
+                    .forEach(function (i) { i.checked = false; });
+            })
+            .catch(function (err) { addTypeError(err.message); })
+            .finally(function () { btnSaveType.disabled = false; });
+        });
+    }
 });
 </script>
 
@@ -171,8 +242,67 @@ document.addEventListener('DOMContentLoaded', function() {
             <label for="class_account_type" class="form-label">Account Type <span class="req">*</span></label>
             <select class="form-select" id="class_account_type" name="class_account_type" required></select>
             <div class="field-help">What specific purpose does this account serve?</div>
+            {% if can_manage_master %}
+            <div class="d-flex gap-2 mt-2">
+                <button type="button" class="btn btn-sm btn-outline-success fw-bold" id="btnQuickAddType">
+                    <i class="bi bi-plus-lg me-1"></i> New Account Type
+                </button>
+                <a href="{{ url_for('accounts.account_types_page') }}" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-diagram-3 me-1"></i> Manage
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
+
+    {% if can_manage_master %}
+    {# Inline creator: a new type is written under the subcategory picked above,
+       then selected in the Account Type dropdown without leaving the form. #}
+    <div class="card border-success mt-3 d-none" id="panelQuickAddType" style="background: var(--surface-2); border: 1px dashed var(--ui-border);">
+        <div class="card-body py-3">
+            <h6 class="fw-bold text-success mb-2"><i class="bi bi-plus-circle me-1"></i> New Account Type</h6>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold mb-1">Name</label>
+                    <input type="text" id="quickTypeName" class="form-control form-control-sm"
+                           maxlength="120" placeholder="e.g. Meezan Bank (Gujrat)">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold mb-1">Channel(s)</label>
+                    <div class="d-flex flex-wrap gap-3" id="quickTypeChannels">
+                        {% for ch in options.channels %}
+                        <label class="form-check mb-0 small">
+                            <input class="form-check-input" type="checkbox" name="qt_channel" value="{{ ch }}">
+                            <span class="form-check-label">{{ ch|replace('_', ' ')|title }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold mb-1">Default</label>
+                    <select id="quickTypeDefault" class="form-select form-select-sm">
+                        {% for ch in options.channels %}
+                        <option value="{{ ch }}">{{ ch|replace('_', ' ')|title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold mb-1">Linked party</label>
+                    <select id="quickTypeEntity" class="form-select form-select-sm">
+                        <option value="none">None</option>
+                        {% for e in registry.entities %}
+                        {% if e.value != 'none' %}<option value="{{ e.value }}">{{ e.label }}</option>{% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1 d-grid">
+                    <button type="button" class="btn btn-sm btn-success fw-bold" id="btnSaveQuickType">Add</button>
+                </div>
+            </div>
+            <div class="small text-danger mt-1 fw-bold" id="quickTypeErr"></div>
+        </div>
+    </div>
+    {% endif %}
 
     {# ---- Section 3: Linked Entity (conditional) ---- #}
     <div class="linked-wrap" id="linked_entity_wrap" style="display:none;">

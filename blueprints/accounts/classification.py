@@ -599,6 +599,8 @@ def registry_json():
             for at_name, node in sub["account_types"].items():
                 sub_node["account_types"].append({
                     "name": at_name,
+                    # Display label may differ from the code after a rename.
+                    "label": node.get("label") or at_name,
                     "channels": node["channels"],
                     "default_channel": node["default_channel"],
                     "entity": node["entity"],

@@ -90,7 +90,8 @@
         var sub = findSub(findCategory(catName), subName);
         if (sub) {
             sub.account_types.forEach(function (t) {
-                addOpt(sel, t.name, t.name, t.name === selected);
+                // value = stable code, text = display label (they differ after a rename)
+                addOpt(sel, t.name, t.label || t.name, t.name === selected);
             });
         }
     }
@@ -413,6 +414,42 @@
             $('adjustment_reason_other_wrap').style.display = '';
         }
     }
+
+    // ---- public hook -----------------------------------------------------
+    // The inline "New Account Type" panel saves through the master API, which
+    // changes the registry server-side.  Without this the browser copy is stale
+    // (the new type would look like it has no channels), so the panel registers
+    // the created node here and asks the form to re-render immediately.
+    function registerAccountType(payload) {
+        if (!payload || !payload.code || !payload.subcategory) return;
+        var sub = findSub(findCategory(payload.category), payload.subcategory);
+        if (!sub) return;
+        var node = {
+            name: payload.code,
+            label: payload.label || payload.name || payload.code,
+            channels: payload.channels && payload.channels.length ? payload.channels : ['ledger_only'],
+            default_channel: payload.default_channel || (payload.channels || ['ledger_only'])[0],
+            entity: payload.entity || 'none'
+        };
+        var replaced = false;
+        for (var i = 0; i < sub.account_types.length; i++) {
+            if (sub.account_types[i].name === node.name) { sub.account_types[i] = node; replaced = true; break; }
+        }
+        if (!replaced) sub.account_types.push(node);
+    }
+
+    window.AMSAccountForm = {
+        registerAccountType: registerAccountType,
+        selectAccountType: function (code) {
+            var sel = $('class_account_type');
+            if (!sel) return;
+            if (sel.value !== code) {
+                buildAccountTypes($('class_category').value, $('class_subcategory').value, code);
+            }
+            sel.value = code;
+            refreshAllFromType();
+        }
+    };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);

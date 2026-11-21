@@ -137,9 +137,12 @@ def item_definitions_page():
         row.usage_count = _usage_count(selected_group, row)
         row.parent = _parent_for(row)
 
+    from blueprints.accounts.classification import CHANNEL_LABELS, ENTITY_LABELS
     return render_template(
         'item_definitions.html',
         groups=GROUP_LABELS,
+        channel_labels=CHANNEL_LABELS,
+        entity_labels=ENTITY_LABELS,
         group_help=GROUP_HELP,
         selected_group=selected_group,
         selected_label=group_label(selected_group),
@@ -187,6 +190,29 @@ def add_item_definition():
         if kind not in ('subcategory', 'account_type'):
             flash('Choose what you are adding: a subcategory or an account type.', 'danger')
             return redirect(url_for('item_definitions_page', group=group))
+
+        # An account TYPE is written by the shared master service so the
+        # channel / linked-entity behaviour is captured (otherwise every custom
+        # type fell back to 'ledger_only' + no linked party).
+        if kind == 'account_type':
+            from app.services import account_types as atypes
+            try:
+                created = atypes.create(
+                    name=name,
+                    subcategory_code=parent_code,
+                    channels=request.form.getlist('channels') or ['ledger_only'],
+                    default_channel=request.form.get('default_channel'),
+                    entity=request.form.get('entity') or 'none',
+                )
+            except atypes.AccountTypeError as exc:
+                db.session.rollback()
+                flash(str(exc), 'danger')
+                return redirect(url_for('item_definitions_page', group=group))
+            audit_log(current_user, 'item_definition.add',
+                      f'{group}/account_type name={created.name} code={created.code}')
+            flash(f'Account type "{created.name}" added.', 'success')
+            return redirect(url_for('item_definitions_page', group=group))
+
         # Resolve parent
         parent = None
         if kind == 'subcategory':
@@ -292,9 +318,11 @@ def rename_item_definition(def_id):
     old = row.name
     group = row.group_key
     row.name = name
-    if group == GROUP_CHARGE_TYPE:
-        # charge labels come from metadata label
-        meta = row.config or {}
+    if group in (GROUP_CHARGE_TYPE, GROUP_ACCOUNT_CLASSIFICATION):
+        # Display label lives in config for these groups: charge labels are read
+        # from it, and an account type's label is what the Account form shows
+        # (the code stays stable so saved accounts keep resolving).
+        meta = dict(row.config or {})
         meta['label'] = name
         row.config = meta
     db.session.commit()
