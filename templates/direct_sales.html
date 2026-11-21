@@ -307,8 +307,8 @@
                 <label class="ui-label">Category</label>
                 <select name="category" class="form-select form-select-sm">
                     <option value="">All</option>
-                    {% for cat in categories %}
-                    <option value="{{ cat }}" {% if (filters.category if filters else '') == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% for cat_code, cat_label in categories %}
+                    <option value="{{ cat_code }}" {% if (filters.category if filters else '') == cat_code %}selected{% endif %}>{{ cat_label }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -564,11 +564,17 @@
                         <div id="categorySelectDiv">
                             <label class="text-white-50 small fw-bold mb-1">1. Select Sale Type</label>
                             <select name="category" id="saleCategory" class="form-select bg-dark text-white border-secondary w-sale-type">
+                                {% if categories %}
+                                {% for cat_code, cat_label in categories %}
+                                <option value="{{ cat_code }}">{{ cat_label }}</option>
+                                {% endfor %}
+                                {% else %}
                                 <option value="Booking Delivery">Booked Sale</option>
                                 <option value="Mixed Transaction">Booked + Due</option>
                                 <option value="Credit Customer">Due Sale</option>
                                 <option value="Open Khata">Open Khata</option>
                                 <option value="Cash">Cash Sale</option>
+                                {% endif %}
                             </select>
                         </div>
                         <div class="position-relative">
@@ -869,9 +875,15 @@
                                 <div class="mb-3">
                                     <label class="text-white-50 small fw-bold mb-1">PAYMENT METHOD</label>
                                     <select name="payment_method" class="form-select bg-dark text-white border-secondary">
+                                        {% if payment_methods %}
+                                        {% for method_code, method_label in payment_methods %}
+                                        <option value="{{ method_code }}">{{ method_label }}</option>
+                                        {% endfor %}
+                                        {% else %}
                                         <option value="Cash">Cash</option>
                                         <option value="Bank">Bank Transfer</option>
                                         <option value="Check">Check</option>
+                                        {% endif %}
                                     </select>
                                 </div>
                             </div>

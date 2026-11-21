@@ -1,5 +1,6 @@
 """payments — split from accounts.py."""
 from ._common import *  # noqa
+from app.services.item_definitions import get_payment_methods
 from app.services.grn_costing import OBLIGATION_LABEL
 from app.services.grn_costing import payment_obligation_label
 from app.services.grn_payments import supplier_open_obligation_options
@@ -154,6 +155,7 @@ def client_payments():
         filter_party_name=(next((f"{c.name} ({c.code})" for c in all_clients if c.id == state['party_id']), '')),
         filter_account_name=(next((_account_option_label(a) for a in all_accounts if a.id == state['account_id']), '')),
         payment_meta=payment_meta,
+        payment_methods=get_payment_methods(),
     )
 
 
@@ -239,6 +241,7 @@ def supplier_payments():
         filter_party_name=(next((s.name for s in all_suppliers if s.id == state['party_id']), '')),
         filter_account_name=(next((_account_option_label(a) for a in all_accounts if a.id == state['account_id']), '')),
         payments_readonly=payments_readonly, payment_meta=payment_meta,
+        payment_methods=get_payment_methods(),
         pay_obligations=pay_obligations,
         obligation_labels=OBLIGATION_LABEL,
     )

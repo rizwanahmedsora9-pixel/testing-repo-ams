@@ -142,6 +142,15 @@
                 <label class="small fw-bold text-white-50">Category</label>
                 <select name="category" class="form-select bg-dark text-white border-secondary">
                     <option value="">All Categories</option>
+                    {% if category_options %}
+                    {% for cat in category_options %}
+                    <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                    {% set _filter_stored = (category_filter or '')|trim %}
+                    {% if _filter_stored and _filter_stored not in category_options %}
+                    <option value="{{ _filter_stored }}" selected>{{ _filter_stored }}</option>
+                    {% endif %}
+                    {% else %}
                     <option value="Cash" {% if category_filter == 'Cash' %}selected{% endif %}>Cash (Unbilled)</option>
                     <option value="Open Khata" {% if category_filter == 'Open Khata' %}selected{% endif %}>Open Khata</option>
                     <option value="Credit Customer" {% if category_filter == 'Credit Customer' %}selected{% endif %}>Due Sales</option>
@@ -149,6 +158,7 @@
                     <option value="General" {% if category_filter == 'General' %}selected{% endif %}>General</option>
                     <option value="Walking-Customer" {% if category_filter == 'Walking-Customer' %}selected{% endif %}>Walking-Customer</option>
                     <option value="Misc" {% if category_filter == 'Misc' %}selected{% endif %}>Misc</option>
+                    {% endif %}
                 </select>
             </div>
             <div class="col-12 col-md-2">

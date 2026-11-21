@@ -1325,6 +1325,14 @@ def _bootstrap_database():
     except Exception:
         pass
     try:
+        # Seed the user-managed business vocabulary (Item Definitions).  The
+        # classification table is seeded before the account-classification
+        # backfill so the table is the authoritative registry at boot.
+        from app.services.item_definitions import ensure_item_definitions
+        ensure_item_definitions()
+    except Exception:
+        logging.getLogger('app').exception('Item definition seeding failed')
+    try:
         _ensure_account_classification_columns()
     except Exception:
         pass

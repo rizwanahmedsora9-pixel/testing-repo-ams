@@ -1,5 +1,11 @@
 """pending — split from misc.py."""
 from ._common import *  # noqa
+def _charge_type_labels():
+    """Active GRN charge-type labels from Item Definitions (code-keyed)."""
+    from app.services.item_definitions import get_charge_type_labels
+    return get_charge_type_labels()
+
+
 from app.services.grn_costing import charge_billed_to_supplier
 from sqlalchemy.exc import IntegrityError
 
@@ -511,6 +517,7 @@ def edit_grn(id):
 
     return render_template(
         'grn_wizard.html',
+        charge_labels=_charge_type_labels(),
         grns=grns,
         grn_breakdowns=grn_breakdowns,
         charge_billed_to_supplier=charge_billed_to_supplier,

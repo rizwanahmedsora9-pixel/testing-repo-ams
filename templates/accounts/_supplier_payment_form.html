@@ -33,9 +33,15 @@
             <div class="col-md-4">
                 <label class="form-label fw-semibold">Method <span class="text-danger">*</span></label>
                 <select name="method" id="spMethod" class="form-select bg-dark text-white border-secondary" style="min-height: 42px;">
+                    {% if payment_methods %}
+                    {% for method_code, method_label in payment_methods %}
+                    <option value="{{ method_code }}" {% if method_code == 'Cash' %}selected{% endif %}>{{ method_label }}</option>
+                    {% endfor %}
+                    {% else %}
                     {% for m in ['Cash','Bank','Check','Card','Online'] %}
                     <option value="{{ m }}" {% if m == 'Cash' %}selected{% endif %}>{{ m }}</option>
                     {% endfor %}
+                    {% endif %}
                 </select>
             </div>
             <div class="col-md-8">

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy import func, or_
@@ -49,6 +50,37 @@ CHARGE_TYPE_LABELS = {
     'UNLOADING': 'Unloading',
     'OTHER': 'Other Expenses',
 }
+
+# Table-backed display labels (item_definition.charge_type).  The tuple
+# above stays the code-level vocabulary — a GRN charge may only carry one of
+# these codes; the table only retitles them.
+_LABELS_TTL_SECONDS = 5.0
+_LABELS_CACHE = None
+_LABELS_TS = 0.0
+
+
+def _charge_type_labels():
+    """{code: display label} for active charge types, from the table.
+
+    Falls back to the seed dict when the table is unavailable (fresh boot
+    before the seeder ran, or outside a database context), so a render
+    never fails on an empty vocabulary.
+    """
+    global _LABELS_CACHE, _LABELS_TS
+    now = time.time()
+    if _LABELS_CACHE is not None and (now - _LABELS_TS) < _LABELS_TTL_SECONDS:
+        return _LABELS_CACHE
+    try:
+        from app.services.item_definitions import get_charge_type_labels
+
+        labels = get_charge_type_labels()
+        if labels:
+            _LABELS_CACHE = labels
+            _LABELS_TS = now
+            return labels
+    except Exception:
+        pass
+    return dict(CHARGE_TYPE_LABELS)
 RECIPIENT_TYPES = ('TRANSPORTER', 'LABOUR', 'OTHER', 'UNSPECIFIED')
 RECIPIENT_LABELS = {
     'TRANSPORTER': 'Vehicle / Transporter',
@@ -473,7 +505,7 @@ def lot_cost_components(item, qty, total_amount):
     else:
         details = [
             {'id': charge.id, 'type': charge.charge_type,
-             'label': charge.label or CHARGE_TYPE_LABELS.get(charge.charge_type, charge.charge_type),
+             'label': charge.label or _charge_type_labels().get(charge.charge_type, charge.charge_type),
              'amount': cents_to_float(share)}
             for charge, share in zip(charges, shares) if share
         ]
@@ -952,7 +984,7 @@ def payment_obligation_label(payment, grn=None):
     if (getattr(payment, 'grn_charge_id', None) or getattr(payment, 'payment_kind', '') == 'GRN_CHARGE'):
         charge = getattr(payment, 'grn_charge', None)
         if charge is not None:
-            base = CHARGE_TYPE_LABELS.get(getattr(charge, 'charge_type', ''), 'GRN charge')
+            base = _charge_type_labels().get(getattr(charge, 'charge_type', ''), 'GRN charge')
             label = getattr(charge, 'label', '') or getattr(payment, 'recipient_name', '')
             return f'{base} — {label}'.strip(' —') if label else base
         return getattr(payment, 'recipient_name', '') or 'GRN charge'
@@ -1004,7 +1036,7 @@ def grn_breakdown(grn):
         charge_rows.append({
             'id': c.id,
             'charge_type': c.charge_type,
-            'charge_label': CHARGE_TYPE_LABELS.get(c.charge_type, c.charge_type),
+            'charge_label': _charge_type_labels().get(c.charge_type, c.charge_type),
             'label': getattr(c, 'label', '') or '',
             'amount': _f(amount),
             'amount_minor': amount,
@@ -1615,7 +1647,7 @@ def sync_charges_from_form(grn, form, *, actor=None, preserve_legacy=True):
         if charge.id is not None:
             paid_minor = _paid_minor_for(int(charge.id))
             if paid_minor > 0:
-                charge_label = charge.label or CHARGE_TYPE_LABELS.get(ctype, ctype)
+                charge_label = charge.label or _charge_type_labels().get(ctype, ctype)
                 if amount_minor < paid_minor:
                     raise ValueError(
                         f"Charge '{charge_label}' already has Rs {paid_minor / 100:,.2f} paid in "

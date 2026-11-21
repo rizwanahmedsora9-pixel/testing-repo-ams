@@ -1,0 +1,303 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold text-info mb-0"><i class="bi bi-list-stars me-2"></i>Item Definitions</h2>
+        <div class="text-white-50 small mt-1">Manage the business vocabulary — account classification, sale categories, GRN charge types and payment methods. Customise labels and add new rows; system rows are locked.</div>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{{ url_for('settings') }}" class="btn btn-outline-light btn-sm fw-bold"><i class="bi bi-arrow-left me-1"></i> Settings</a>
+    </div>
+</div>
+
+<!-- Group switcher -->
+<ul class="nav nav-pills mb-4">
+    {% for g_key, g_label in groups.items() %}
+    <li class="nav-item me-2">
+        <a class="nav-link fw-bold {% if selected_group == g_key %}bg-info text-dark{% else %}text-white-50 border border-secondary{% endif %}"
+           href="{{ url_for('item_definitions_page', group=g_key) }}">{{ g_label }}</a>
+    </li>
+    {% endfor %}
+</ul>
+
+<div class="alert border-info bg-info-subtle text-info-emphasis small mb-4" role="alert" style="background:#0f2a3d !important; border-color:#155e75 !important; color:#a5d8ff !important;">
+    <i class="bi bi-info-circle me-1"></i>{{ group_help[selected_group] }}
+</div>
+
+<!-- Add form (editable groups only) -->
+{% if can_edit %}
+<div class="card border-0 shadow-sm mb-4" style="background:#1e293b; border:2px solid #155e75 !important; border-radius:15px;">
+    <div class="card-body">
+        {% if is_classification %}
+        <form method="POST" action="{{ url_for('add_item_definition') }}">
+            <input type="hidden" name="group" value="{{ selected_group }}">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="text-white-50 small fw-bold mb-1">LEVEL</label>
+                    <select name="kind" id="defKind" class="form-select bg-dark text-white border-secondary" onchange="defKindChange()">
+                        <option value="subcategory">Subcategory</option>
+                        <option value="account_type">Account Type</option>
+                    </select>
+                </div>
+                <div class="col-md-4" id="parentCatWrap">
+                    <label class="text-white-50 small fw-bold mb-1">UNDER CATEGORY</label>
+                    <select id="parentCatSel" class="form-select bg-dark text-white border-secondary" onchange="setParentCode()">
+                        <option value="">Choose a category…</option>
+                        {% for c in parent_options_cat %}<option value="{{ c.code }}">{{ c.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4" id="parentSubWrap" style="display:none;">
+                    <label class="text-white-50 small fw-bold mb-1">UNDER SUBCATEGORY</label>
+                    <select id="parentSubSel" class="form-select bg-dark text-white border-secondary" onchange="setParentCode()">
+                        <option value="">Choose a subcategory…</option>
+                        {% for s in parent_options_sub %}<option value="{{ s.code }}">{{ s.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <input type="hidden" name="parent_code" id="parentCodeHidden">
+                <div class="col-md-5">
+                    <label class="text-white-50 small fw-bold mb-1">NAME</label>
+                    <input type="text" name="name" maxlength="120" class="form-control bg-dark text-white border-secondary" placeholder="e.g. Operating Account" required>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-info text-dark fw-bold"><i class="bi bi-plus-lg me-1"></i>Add</button>
+                </div>
+            </div>
+        </form>
+        {% else %}
+        <form method="POST" action="{{ url_for('add_item_definition') }}">
+            <input type="hidden" name="group" value="{{ selected_group }}">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-9">
+                    <label class="text-white-50 small fw-bold mb-1">NEW NAME</label>
+                    <input type="text" name="name" maxlength="120" class="form-control bg-dark text-white border-secondary" placeholder="e.g. Retail" required>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-info text-dark fw-bold"><i class="bi bi-plus-lg me-1"></i>Add</button>
+                </div>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="alert border-warning bg-warning-subtle mb-4" role="alert" style="background:#3a2a12 !important; border-color:#b45309 !important; color:#fde68a !important;">
+    <i class="bi bi-lock me-1"></i><strong>Locked group.</strong> Values in this group are referenced by the application code (reports, P&amp;L mappings, form defaults). A new value is a code change, not a data change.
+</div>
+{% endif %}
+
+<!-- Classification tree -->
+{% if is_classification %}
+<div class="d-flex flex-column gap-3">
+    {% for node in tree %}
+    {% set cat = node.category %}
+    <div class="card border-0 shadow-sm" style="background:#1e293b; border-radius:15px;">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <span class="badge bg-dark border border-info text-info me-2">Category</span>
+                    <strong class="text-info">{{ cat.name }}</strong>
+                    {% if cat.is_active %}
+                    <span class="badge bg-success-subtle text-success-emphasis border border-success ms-1">Active</span>
+                    {% else %}
+                    <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary ms-1">Inactive</span>
+                    {% endif %}
+                </div>
+                {% if can_edit and not cat.is_system %}
+                <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
+                    <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#renameDef{{ cat.id }}">Rename</button>
+                    <form method="POST" action="{{ url_for('toggle_item_definition', def_id=cat.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-outline-{{ 'secondary' if cat.is_active else 'success' }} btn-sm">{{ 'Deactivate' if cat.is_active else 'Activate' }}</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('delete_item_definition', def_id=cat.id) }}" class="d-inline"
+                          onsubmit="return confirm('Delete category &quot;{{ cat.name }}&quot;? Only categories with no children and no records can be deleted.');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            <div class="text-white-50 small mt-1">{{ cat.usage_count }} account(s) in this category</div>
+
+            <div class="row g-3 mt-2">
+                {% for sub_node in node.subcategories %}
+                {% set sub = sub_node.subcategory %}
+                <div class="col-12">
+                    <div class="border border-secondary rounded p-2 mb-2" style="background:#16202f;">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div>
+                                <span class="badge bg-dark border border-info text-info me-2">Subcategory</span>
+                                <strong class="text-white">{{ sub.name }}</strong>
+                                {% if sub.is_active %}
+                                <span class="badge bg-success-subtle text-success-emphasis border border-success ms-1">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary ms-1">Inactive</span>
+                                {% endif %}
+                                {% if sub.is_system %}<span class="badge bg-secondary ms-1" title="Built-in locked value">locked</span>{% endif %}
+                            </div>
+                            {% if can_edit and not sub.is_system %}
+                            <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
+                                <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#renameDef{{ sub.id }}">Rename</button>
+                                <form method="POST" action="{{ url_for('toggle_item_definition', def_id=sub.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-{{ 'secondary' if sub.is_active else 'success' }} btn-sm">{{ 'Deactivate' if sub.is_active else 'Activate' }}</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('delete_item_definition', def_id=sub.id) }}" class="d-inline"
+                                      onsubmit="return confirm('Delete subcategory &quot;{{ sub.name }}&quot;? Only subcategories with no children can be deleted.');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="text-white-50 small mt-1">{{ sub.usage_count }} account(s)</div>
+
+                        <div class="row g-1 mt-2">
+                            {% for leaf in sub_node.account_types %}
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 px-2 py-1 border-start border-info">
+                                    <div class="small">
+                                        <span class="text-info fw-semibold">{{ leaf.name }}</span>
+                                        {% if leaf.is_active %}
+                                        <span class="badge bg-success-subtle text-success-emphasis border border-success ms-1">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary ms-1">Inactive</span>
+                                        {% endif %}
+                                        {% if leaf.is_system %}<span class="badge bg-secondary ms-1" title="Built-in locked value">locked</span>{% endif %}
+                                        <span class="text-white-50 small ms-2">{{ leaf.usage_count }} account(s)</span>
+                                    </div>
+                                    {% if can_edit and not leaf.is_system %}
+                                    <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
+                                        <button type="button" class="btn btn-outline-warning btn-sm py-0 px-2" data-bs-toggle="modal" data-bs-target="#renameDef{{ leaf.id }}">Rename</button>
+                                        <form method="POST" action="{{ url_for('toggle_item_definition', def_id=leaf.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-outline-{{ 'secondary' if leaf.is_active else 'success' }} btn-sm py-0 px-2">{{ 'Deactivate' if leaf.is_active else 'Activate' }}</button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('delete_item_definition', def_id=leaf.id) }}" class="d-inline"
+                                              onsubmit="return confirm('Delete account type &quot;{{ leaf.name }}&quot;? Only unused account types can be deleted.');">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm py-0 px-2">Delete</button>
+                                        </form>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="col-12 text-white-50 small italic">No account types yet.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12 text-white-50 small">No subcategories yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm" style="background:#1e293b; border-radius:15px;">
+        <div class="card-body text-center text-white-50 py-4">No categories yet — add one above.</div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<!-- Flat groups -->
+<div class="card border-0 shadow-sm" style="background:#1e293b; border:2px solid #475569 !important; border-radius:15px; overflow:hidden;">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle mb-0">
+            <thead style="background:#0f172a;">
+                <tr>
+                    <th class="py-3 ps-4 text-white-50">Name</th>
+                    <th class="py-3 text-white-50">Code</th>
+                    <th class="py-3 text-white-50">Usage</th>
+                    <th class="py-3 text-white-50">Status</th>
+                    <th class="py-3 text-white-50">Created</th>
+                    {% if can_edit %}<th class="py-3 pe-4 text-end text-white-50">Actions</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td class="ps-4 fw-bold text-white">
+                        {{ row.name }}
+                        {% if row.is_system %}<span class="badge bg-secondary text-secondary ms-1" title="Built-in locked value">locked</span>{% endif %}
+                    </td>
+                    <td class="text-white-50"><code>{{ row.code }}</code></td>
+                    <td class="text-white-50">{{ row.usage_count }}</td>
+                    <td>
+                        {% if row.is_active %}
+                        <span class="badge bg-success-subtle text-success-emphasis border border-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-white-50 small">{{ row.created_at.strftime('%Y-%m-%d') if row.created_at else '-' }}</td>
+                    {% if can_edit %}
+                    <td class="pe-4 text-end">
+                        <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
+                            {% if not row.is_system %}
+                            <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#renameDef{{ row.id }}">Rename</button>
+                            <form method="POST" action="{{ url_for('toggle_item_definition', def_id=row.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-outline-{{ 'secondary' if row.is_active else 'success' }} btn-sm">{{ 'Deactivate' if row.is_active else 'Activate' }}</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('delete_item_definition', def_id=row.id) }}" class="d-inline"
+                                  onsubmit="return confirm('Delete &quot;{{ row.name }}&quot;? Only unused definitions can be deleted.');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" {% if row.usage_count %}disabled title="Used by {{ row.usage_count }} record(s)"{% endif %}>Delete</button>
+                            </form>
+                            {% else %}
+                            <span class="text-white-50 small italic">—</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center text-white-50 py-4">No definitions in this group yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<p class="text-white-50 small mt-3 mb-0">
+    Custom rows are stored in the <code>item_definition</code> table. System (locked) rows ship with the app and cannot be renamed, deactivated or deleted. Deactivating a custom row hides it from new forms and dropdowns; existing records are never rewritten.
+</p>
+
+{% if can_edit %}
+{% for row in rows %}
+{% if not row.is_system %}
+<div class="modal fade" id="renameDef{{ row.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <form method="POST" action="{{ url_for('rename_item_definition', def_id=row.id) }}" class="modal-content border-secondary" style="background:#1e293b;">
+            <div class="modal-header border-0">
+                <h5 class="text-info fw-bold mb-0">Rename {{ selected_label }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="text-white-50 small fw-bold mb-1">NEW NAME</label>
+                <input type="text" name="name" maxlength="120" value="{{ row.name }}" class="form-control bg-dark text-white border-secondary" required>
+                <small class="text-white-50 d-block mt-2">Renaming changes the display label only — records keep the original code and are never rewritten.</small>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="submit" class="btn btn-info text-dark fw-bold w-100">Save Name</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endif %}
+<script>
+function defKindChange() {
+    const k = document.getElementById('defKind').value;
+    document.getElementById('parentCatWrap').style.display = k === 'subcategory' ? '' : 'none';
+    document.getElementById('parentSubWrap').style.display = k === 'account_type' ? '' : 'none';
+    setParentCode();
+}
+function setParentCode() {
+    const k = document.getElementById('defKind').value;
+    const sel = k === 'subcategory' ? document.getElementById('parentCatSel') : document.getElementById('parentSubSel');
+    document.getElementById('parentCodeHidden').value = sel.value;
+}
+document.addEventListener('DOMContentLoaded', function () {
+    const hidden = document.getElementById('parentCodeHidden');
+    if (hidden) { setParentCode(); }
+});
+</script>
+{% endblock %}

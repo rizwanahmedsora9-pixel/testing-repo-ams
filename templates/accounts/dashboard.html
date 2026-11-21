@@ -416,10 +416,16 @@
                     <div class="col-md-6" id="txMethodWrap">
                         <label class="form-label">Method</label>
                         <select class="form-select" name="method">
+                            {% if payment_methods %}
+                            {% for method_code, method_label in payment_methods %}
+                            <option value="{{ method_code }}">{{ method_label }}</option>
+                            {% endfor %}
+                            {% else %}
                             <option value="Cash">Cash</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Bank">Bank Transfer</option>
                             <option value="Check">Check</option>
                             <option value="Online">Online</option>
+                            {% endif %}
                         </select>
                     </div>
                 </div>
@@ -727,11 +733,17 @@
                                                         <div class="col-md-6">
                                                             <label class="form-label small mb-1" for="grnExpenseMethod">Method</label>
                                                             <select class="form-select form-select-sm" name="grn_expense_method" id="grnExpenseMethod" disabled>
-                                                                <option value="Cash">Cash</option>
-                                                                <option value="Bank Transfer">Bank Transfer</option>
-                                                                <option value="Check">Check</option>
-                                                                <option value="Online">Online</option>
-                                                            </select>
+                                                                {% if payment_methods %}
+                                {% for method_code, method_label in payment_methods %}
+                                <option value="{{ method_code }}">{{ method_label }}</option>
+                                {% endfor %}
+                                {% else %}
+                                <option value="Cash">Cash</option>
+                                <option value="Bank">Bank Transfer</option>
+                                <option value="Check">Check</option>
+                                <option value="Online">Online</option>
+                                {% endif %}
+                            </select>
                                                         </div>
                                                         <div class="col-md-6">
                                                             <label class="form-label small mb-1" for="grnExpenseReference">Reference</label>

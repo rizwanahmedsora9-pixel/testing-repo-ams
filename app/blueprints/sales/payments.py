@@ -1,6 +1,8 @@
 """payments — split from sales.py."""
 from ._common import *  # noqa
 
+from app.services.item_definitions import get_payment_methods
+
 @bp.route('/payments')
 @login_required
 def payments_page():
@@ -114,7 +116,8 @@ def payments_page():
                            page_customer=page_customer,
                            page_supplier=page_supplier,
                            per_page_customer=per_page_customer,
-                           per_page_supplier=per_page_supplier)
+                           per_page_supplier=per_page_supplier,
+                           payment_methods=get_payment_methods())
 
 
 @bp.route('/add_payment', methods=['POST'])

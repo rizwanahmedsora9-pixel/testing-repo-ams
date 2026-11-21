@@ -1,4 +1,4 @@
-{% macro kpi_filter_bar(back_url, date_from=None, date_to=None, search=None, method_f=None, method_label='Method') -%}
+{% macro kpi_filter_bar(back_url, date_from=None, date_to=None, search=None, method_f=None, method_label='Method', payment_methods=None) -%}
 <div class="led-card mb-3">
   <form class="filter-bar" method="get">
     {% if date_from is not none %}
@@ -9,9 +9,19 @@
       <div><div class="form-label">{{ method_label }}</div>
         <select name="method" class="form-select form-select-sm">
           <option value="">All</option>
+          {% if payment_methods %}
+          {% for method_code, method_label in payment_methods %}
+            <option value="{{ method_code }}" {% if method_code==method_f %}selected{% endif %}>{{ method_label }}</option>
+          {% endfor %}
+          {# Legacy stored values (e.g. 'Bank Transfer') are kept selectable. #}
+          {% if method_f and method_f not in payment_methods|map(attribute='0')|list %}
+            <option value="{{ method_f }}" selected>{{ method_f }}</option>
+          {% endif %}
+          {% else %}
           {% for m in ['Cash','Bank','Bank Transfer','Check','Card','Online'] %}
             <option value="{{ m }}" {% if m==method_f %}selected{% endif %}>{{ m }}</option>
           {% endfor %}
+          {% endif %}
         </select>
       </div>
     {% endif %}

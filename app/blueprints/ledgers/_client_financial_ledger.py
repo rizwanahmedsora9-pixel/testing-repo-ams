@@ -1,5 +1,7 @@
-"""client — split from ledgers.py."""
 from ._common import *  # noqa
+
+from app.services.item_definitions import get_payment_methods
+
 from app.services.client_identity import client_reference_filter
 from app.services.ledgers import client_material_entry_filter
 from sqlalchemy.orm import joinedload
@@ -1358,5 +1360,6 @@ def financial_ledger(client_id):
                            material_opening_balance=material_opening_balance,
                            analysis_requested=analysis_requested,
                            analysis_status=analysis_status,
-                           analysis_tab_url=analysis_tab_url)
+                           analysis_tab_url=analysis_tab_url,
+                           payment_methods=get_payment_methods())
 

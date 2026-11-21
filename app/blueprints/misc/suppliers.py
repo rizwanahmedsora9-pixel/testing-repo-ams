@@ -1,5 +1,6 @@
 """suppliers — split from misc.py."""
 from ._common import *  # noqa
+from app.services.item_definitions import get_payment_methods
 
 @bp.route('/pay_supplier', methods=['GET'])
 @login_required
@@ -67,6 +68,7 @@ def supplier_ledger(id):
         back_url=url_for('suppliers'),
         opening_url=url_for('supplier_opening_balance', id=supplier.id),
         today_date=pk_today().strftime('%Y-%m-%d'),
+        payment_methods=get_payment_methods(),
     )
 
 
@@ -422,4 +424,5 @@ def party_ledger(id):
         back_url=url_for('accounts.grn_payments'),
         opening_url=None,
         today_date=pk_today().strftime('%Y-%m-%d'),
+        payment_methods=get_payment_methods(),
     )

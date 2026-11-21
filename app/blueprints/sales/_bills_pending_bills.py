@@ -1,5 +1,6 @@
 """bills — split from sales.py."""
 from ._common import *  # noqa
+from app.services.item_definitions import get_sale_categories
 
 @bp.route('/pending_bills')
 @login_required
@@ -72,7 +73,8 @@ def pending_bills():
                            pagination=pagination,
                            filters=filters,
                            clients=active_clients,
-                           materials=materials)
+                           materials=materials,
+                           sale_categories=get_sale_categories())
 
 
 @bp.route('/pending_bills/<int:bill_id>/modals')

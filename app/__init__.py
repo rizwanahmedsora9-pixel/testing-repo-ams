@@ -353,6 +353,18 @@ def create_app(test_config: dict | None = None) -> Flask:
                 _ensure_model_columns()
                 _ensure_loan_party_two_way_schema()
                 # Keep a fresh test database usable in the same way as a fresh
+                # production database (including the user-managed vocabulary).
+                # Test fixtures may then seed/assert against real rows.
+                from app.services.item_definitions import ensure_item_definitions
+
+                try:
+                    ensure_item_definitions()
+                except Exception:
+                    logging.getLogger(__name__).warning(
+                        "Item definition seeding failed in TESTING mode",
+                        exc_info=True,
+                    )
+                # Keep a fresh test database usable in the same way as a fresh
                 # production database.  The smoke tests and local developers
                 # rely on the documented Admin login even when no rows exist.
                 _ensure_default_admin()

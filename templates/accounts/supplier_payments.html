@@ -53,7 +53,12 @@
             <div class="method-wrap"><label>Method</label>
                 <select name="method" class="form-select form-select-sm">
                     <option value="">All Methods</option>
+                    {% if payment_methods %}
+                    {% for method_code, method_label in payment_methods %}<option value="{{ method_code }}" {% if method_code==method_f %}selected{% endif %}>{{ method_label }}</option>{% endfor %}
+                    {% if method_f and method_f not in payment_methods|map(attribute='0')|list %}<option value="{{ method_f }}" selected>{{ method_f }}</option>{% endif %}
+                    {% else %}
                     {% for m in ['Cash','Bank','Check','Card','Online'] %}<option value="{{ m }}" {% if m==method_f %}selected{% endif %}>{{ m }}</option>{% endfor %}
+                    {% endif %}
                 </select>
             </div>
             <div class="rows-wrap"><label>Rows</label><select name="per_page" class="form-select form-select-sm">{% for n in [10,25,50,100] %}<option value="{{ n }}" {% if per_page==n %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></div>

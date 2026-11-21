@@ -18,6 +18,7 @@ rate — each with its own Total / Paid / To pay.
 """
 from ._common import *  # noqa
 import secrets
+from app.services.item_definitions import get_payment_methods
 from models import GRN, GRNCharge, SupplierPayment, CashFlowParty, Supplier
 from app.services.grn_costing import (
     grn_breakdown, supplier_bill_breakdown, payment_obligation_label,
@@ -201,6 +202,7 @@ def grn_payments():
 
     return render_template(
         'accounts/grn_payments.html',
+        payment_methods=get_payment_methods(),
         page_rows=page_rows,
         selected=selected,
         breakdown=breakdown,
@@ -544,6 +546,7 @@ def pay_grn():
 
     return render_template(
         'accounts/pay_grn.html',
+        payment_methods=get_payment_methods(),
         suppliers=suppliers,
         supplier_id=supplier_id,
         selected=selected,
