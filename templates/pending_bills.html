@@ -86,11 +86,22 @@
             <label class="text-white-50 small fw-bold mb-1">CATEGORY</label>
             <select name="category" class="form-select form-select-sm bg-dark text-white border-secondary">
                 <option value="">All Categories</option>
+                {% if sale_categories %}
+                {% set _filter_labels = {'Booking Delivery': 'Booked Sale', 'Mixed Transaction': 'Booked + Due', 'Credit Customer': 'Due Sale', 'Cash': 'Cash Sale'} %}
+                {% for cat_code, cat_label in sale_categories %}
+                <option value="{{ cat_code }}" {% if filters.category == cat_code %}selected{% endif %}>{{ _filter_labels.get(cat_code, cat_label) }}</option>
+                {% endfor %}
+                {% set _filter_stored = (filters.category or '')|trim %}
+                {% if _filter_stored and _filter_stored != 'Cash Paid' and _filter_stored not in sale_categories|map(attribute='0')|list %}
+                <option value="{{ _filter_stored }}" selected>{{ _filter_stored }}</option>
+                {% endif %}
+                {% else %}
                 <option value="Booking Delivery" {% if filters.category == 'Booking Delivery' %}selected{% endif %}>Booked Sale</option>
                 <option value="Mixed Transaction" {% if filters.category == 'Mixed Transaction' %}selected{% endif %}>Booked + Due</option>
                 <option value="Credit Customer" {% if filters.category == 'Credit Customer' %}selected{% endif %}>Due Sale</option>
                 <option value="Open Khata" {% if filters.category == 'Open Khata' %}selected{% endif %}>Open Khata</option>
                 <option value="Cash" {% if filters.category == 'Cash' %}selected{% endif %}>Cash Sale</option>
+                {% endif %}
                 <option value="Cash Paid" {% if filters.category == 'Cash Paid' %}selected{% endif %}>Cash Paid (Open Khata)</option>
             </select>
         </div>

@@ -14,6 +14,7 @@ from .imports import *  # noqa
 from .migration import *  # noqa
 from .events import *  # noqa
 from .sidebar import *  # noqa
+from .item_definition import *  # noqa
 
 import sys as _sys
 from types import ModuleType as _ModuleType
@@ -41,6 +42,7 @@ for _name, _obj in list(globals().items()):
         "events",
         "helpers",
         "sidebar",
+        "item_definition",
     }:
         # keep attribute for explicit models.cash access, but exclude from star-import
         pass

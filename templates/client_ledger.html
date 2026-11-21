@@ -1180,9 +1180,19 @@ function submitCancelSelection{{ client.id }}() {
                         <div class="col-md-6">
                             <label class="text-white-50 small fw-bold mb-1">Method</label>
                             <select name="method" class="form-select bg-dark text-white border-secondary">
+                                {% if payment_methods %}
+                                {% for method_code, method_label in payment_methods %}
+                                <option value="{{ method_code }}" {{ 'selected' if txn.method == method_code }}>{{ method_label }}</option>
+                                {% endfor %}
+                                {% set _stored_method = (txn.method or '')|trim %}
+                                {% if _stored_method and _stored_method not in payment_methods|map(attribute='0')|list %}
+                                <option value="{{ _stored_method }}" selected>{{ _stored_method }}</option>
+                                {% endif %}
+                                {% else %}
                                 <option value="Cash" {{ 'selected' if txn.method == 'Cash' }}>Cash</option>
                                 <option value="Bank" {{ 'selected' if txn.method == 'Bank' }}>Bank</option>
                                 <option value="Cheque" {{ 'selected' if txn.method == 'Cheque' }}>Cheque</option>
+                                {% endif %}
                             </select>
                         </div>
                         <div class="col-md-6">

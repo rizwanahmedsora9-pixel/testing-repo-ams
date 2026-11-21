@@ -231,11 +231,19 @@ def tracking():
         if b.bill_no
     }
 
+    active_clients = Client.query.filter(Client.is_active == True).order_by(Client.name.asc()).all()
+    category_options = sorted({c.category for c in active_clients if (c.category or '').strip()})
+    for default_cat in ['General', 'Open Khata', 'Walking-Customer', 'Misc']:
+        if default_cat not in category_options:
+            category_options.append(default_cat)
+    category_options = sorted(category_options, key=lambda x: str(x).lower())
+
     return render_template(
         'tracking.html',
         entries=entries,
         pagination=pagination,
-        clients=Client.query.filter(Client.is_active == True).order_by(Client.name.asc()).all(),
+        clients=active_clients,
+        category_options=category_options,
         materials=Material.query.order_by(Material.name.asc()).all(),
         start_date=s,
         end_date=end,

@@ -3,6 +3,8 @@ from ._common import *  # noqa
 
 from uuid import uuid4
 
+from app.services.item_definitions import get_payment_methods
+
 def _grn_expenses_open_total(bill):
     """Every open GRN expense (each one is its own payable box)."""
     total = bill.get('recipient_remaining', 0.0) or 0.0
@@ -208,6 +210,7 @@ def dashboard():
                           clients=clients,
                           delivery_persons=delivery_persons,
                           driver_outstanding=driver_outstanding_map,
+                          payment_methods=get_payment_methods(),
                           submission_token=uuid4().hex,
                           default_tx_datetime=pk_now().strftime('%Y-%m-%dT%H:%M'))
 

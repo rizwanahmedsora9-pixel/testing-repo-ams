@@ -13,11 +13,21 @@
                         <div>
                             <label class="text-white-50 small fw-bold mb-1">1. Select Sale Type</label>
                             <select name="category" id="editSaleCategory{{ sale.id }}" class="form-select bg-dark text-white border-secondary edit-sale-category">
+                                {% if categories %}
+                                {% for cat_code, cat_label in categories %}
+                                <option value="{{ cat_code }}" {% if sale.category == cat_code %}selected{% endif %}>{{ cat_label }}</option>
+                                {% endfor %}
+                                {% set _stored_cat = (sale.category or '')|trim %}
+                                {% if _stored_cat and _stored_cat not in categories|map(attribute='0')|list %}
+                                <option value="{{ _stored_cat }}" selected>{{ _stored_cat }}</option>
+                                {% endif %}
+                                {% else %}
                                 <option value="Booking Delivery" {% if sale.category == 'Booking Delivery' %}selected{% endif %}>Booked Sale</option>
                                 <option value="Mixed Transaction" {% if sale.category == 'Mixed Transaction' %}selected{% endif %}>Booked + Due</option>
                                 <option value="Credit Customer" {% if sale.category == 'Credit Customer' %}selected{% endif %}>Due Sale</option>
                                 <option value="Open Khata" {% if sale.category == 'Open Khata' %}selected{% endif %}>Open Khata</option>
                                 <option value="Cash" {% if sale.category == 'Cash' %}selected{% endif %}>Cash Sale</option>
+                                {% endif %}
                             </select>
                         </div>
                         <div class="position-relative">
@@ -340,9 +350,19 @@
                                 <div class="mb-3">
                                     <label class="text-white-50 small fw-bold mb-1">PAYMENT METHOD</label>
                                     <select name="payment_method" class="form-select bg-dark text-white border-secondary">
+                                        {% if payment_methods %}
+                                        {% for method_code, method_label in payment_methods %}
+                                        <option value="{{ method_code }}" {% if (sale.payment_method or 'Cash') == method_code %}selected{% endif %}>{{ method_label }}</option>
+                                        {% endfor %}
+                                        {% set _stored = (sale.payment_method or '')|trim %}
+                                        {% if _stored and _stored not in payment_methods|map(attribute='0')|list %}
+                                        <option value="{{ _stored }}" selected>{{ _stored }}</option>
+                                        {% endif %}
+                                        {% else %}
                                         <option value="Cash" {% if (sale.payment_method or 'Cash') == 'Cash' %}selected{% endif %}>Cash</option>
                                         <option value="Bank" {% if sale.payment_method == 'Bank' %}selected{% endif %}>Bank Transfer</option>
                                         <option value="Check" {% if sale.payment_method == 'Check' %}selected{% endif %}>Check</option>
+                                        {% endif %}
                                     </select>
                                 </div>
                             </div>

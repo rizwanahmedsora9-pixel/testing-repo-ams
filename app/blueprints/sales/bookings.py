@@ -2,6 +2,7 @@
 from sqlalchemy.exc import IntegrityError
 
 from ._common import *  # noqa
+from app.services.item_definitions import get_payment_methods
 from app.services import pricing as _pricing
 from app.services.edit_policy import resolve_payment_account  # noqa: E402
 
@@ -307,7 +308,8 @@ def bookings_page():
                            date_from=date_from,
                            date_to=date_to,
                            pagination=bookings_pagination,
-                           per_page=per_page)
+                           per_page=per_page,
+                           payment_methods=get_payment_methods())
 
 
 @bp.route('/bookings/<int:booking_id>/edit-modal')
@@ -337,7 +339,7 @@ def booking_edit_modal(booking_id):
         for hsv in Service.query.filter(func.lower(func.trim(Service.name)).in_(hist_names)).all():
             if hsv.id not in active_sids:
                 services.append(hsv)
-    return render_template('_booking_edit_modal.html', booking=booking, clients=clients, accounts=accounts, materials=materials, services=services)
+    return render_template('_booking_edit_modal.html', booking=booking, clients=clients, accounts=accounts, materials=materials, services=services, payment_methods=get_payment_methods())
 
 
 @bp.route('/add_booking', methods=['POST'])

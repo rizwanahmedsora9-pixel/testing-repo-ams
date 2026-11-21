@@ -316,9 +316,15 @@
             <div class="row g-2">
               <div class="col-7"><label class="form-label small">Cash / Bank</label>
                 <select name="method" class="form-select form-select-sm" required>
+                  {% if payment_methods %}
+                  {% for method_code, method_label in payment_methods %}
+                  <option value="{{ method_code }}">{{ method_label }}</option>
+                  {% endfor %}
+                  {% else %}
                   <option value="Cash">Cash</option><option value="Bank">Bank</option>
                   <option value="Check">Check</option><option value="Card">Card</option>
                   <option value="Online">Online</option>
+                  {% endif %}
                 </select>
               </div>
               <div class="col-5"><label class="form-label small">Date</label>

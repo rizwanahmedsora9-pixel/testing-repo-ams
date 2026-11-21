@@ -30,7 +30,7 @@
 
   {{ kpi_summary(total_amount=total_amount, total_count=total_count, left_label='Total Spent', right_label='Entries', left_color='s-amber', right_color='s-cyan', left_icon='bi-cash-stack', right_icon='bi-list-ol') }}
 
-  {{ kpi_filter_bar(url_for('accounts.kpi_expenditures'), date_from=date_from, date_to=date_to, search=search, method_f=method_f) }}
+  {{ kpi_filter_bar(url_for('accounts.kpi_expenditures'), date_from=date_from, date_to=date_to, search=search, method_f=method_f, payment_methods=payment_methods) }}
 
   {{ card_grid(items, kind='expenditures') }}
 

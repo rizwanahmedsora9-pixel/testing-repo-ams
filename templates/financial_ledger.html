@@ -561,9 +561,19 @@
           <div class="col-6">
             <label class="text-white-50 small fw-bold">Payment method</label>
             <select name="method" class="form-select bg-dark text-white border-secondary" data-driver-method>
-              {% for m in ['Cash', 'Bank', 'Check', 'Online'] %}
+              {% if payment_methods %}
+              {% for method_code, method_label in payment_methods %}
+              <option value="{{ method_code }}" {{ 'selected' if (row.source.method or 'Cash') == method_code }}>{{ method_label }}</option>
+              {% endfor %}
+              {% set _stored_method = (row.source.method or '')|trim %}
+              {% if _stored_method and _stored_method not in payment_methods|map(attribute='0')|list %}
+              <option value="{{ _stored_method }}" selected>{{ _stored_method }}</option>
+              {% endif %}
+              {% else %}
+              {% for m in ['Cash', 'Card', 'Bank', 'Online', 'Check'] %}
               <option value="{{ m }}" {{ 'selected' if (row.source.method or 'Cash') == m }}>{{ m }}</option>
               {% endfor %}
+              {% endif %}
             </select>
           </div>
           <div class="col-6">
@@ -622,10 +632,17 @@
           <div class="col-6">
             <label class="text-white-50 small fw-bold">Payment method</label>
             <select name="method" class="form-select bg-dark text-white border-secondary" data-driver-method>
+              {% if payment_methods %}
+              {% for method_code, method_label in payment_methods %}
+              <option value="{{ method_code }}">{{ method_label }}</option>
+              {% endfor %}
+              {% else %}
               <option value="Cash">Cash</option>
-              <option value="Bank">Bank</option>
+              <option value="Card">Card</option>
+              <option value="Bank">Bank Transfer</option>
               <option value="Check">Check</option>
               <option value="Online">Online</option>
+              {% endif %}
             </select>
           </div>
           <div class="col-6">

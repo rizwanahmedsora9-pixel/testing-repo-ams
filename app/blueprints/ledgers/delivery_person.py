@@ -1,6 +1,8 @@
 """Delivery-person financial ledger routes."""
 from ._common import *  # noqa
 
+from app.services.item_definitions import get_payment_methods
+
 import csv
 import logging
 from io import StringIO
@@ -84,6 +86,7 @@ def _render_driver_ledger(person, *, filters=None):
         opening_url=url_for('delivery_person_opening_balance', id=person.id),
         today_date=pk_today().strftime('%Y-%m-%d'),
         payment_accounts=_driver_payment_accounts(),
+        payment_methods=get_payment_methods(),
         submission_token=uuid4().hex,
     )
 

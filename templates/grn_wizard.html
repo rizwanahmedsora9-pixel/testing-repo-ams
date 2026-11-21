@@ -7,7 +7,7 @@
    is already saved on this GRN).  The single row markup below is shared by
    the saved rows and the inert <template> the Add charge button clones, so
    a hand-added row and a stored row can never drift apart. #}
-{% set charge_labels = {'VEHICLE_FARE': 'Vehicle Fare', 'TRANSPORT': 'Transportation', 'LOADING': 'Loading', 'UNLOADING': 'Unloading', 'OTHER': 'Other Expenses'} %}
+{% if charge_labels is none %}{% set charge_labels = {'VEHICLE_FARE': 'Vehicle Fare', 'TRANSPORT': 'Transportation', 'LOADING': 'Loading', 'UNLOADING': 'Unloading', 'OTHER': 'Other Expenses'} %}{% endif %}
 {% set recipient_labels = {'TRANSPORTER': 'Vehicle / Transporter', 'LABOUR': 'Loading / Labour', 'OTHER': 'Other charge recipient'} %}
 {% set treatment_labels = {'INVENTORY': 'Include in material cost', 'EXPENSE': 'Separate expense', 'NON_MATERIAL': 'Not material cost'} %}
 {% set cns = namespace(rows=[]) %}

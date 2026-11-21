@@ -1,6 +1,8 @@
 """delivery — split from ops.py."""
 from ._common import *  # noqa
 
+from app.services.item_definitions import get_payment_methods
+
 from flask import current_app
 
 from uuid import uuid4
@@ -98,6 +100,7 @@ def delivery_rents_page():
         truncated=result['truncated'],
         render_all_details=render_all_details,
         payment_accounts=payment_accounts,
+        payment_methods=get_payment_methods(),
         submission_token=uuid4().hex,
         can_pay=can_pay,
         currency_symbol=_delivery_rent_currency_symbol(),

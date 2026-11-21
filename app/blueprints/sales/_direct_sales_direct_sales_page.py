@@ -1,5 +1,6 @@
 """direct_sales — split from sales.py."""
 from ._common import *  # noqa
+from app.services.item_definitions import get_sale_categories, get_payment_methods
 
 
 def _parse_filter_date(value):
@@ -88,7 +89,9 @@ def direct_sales_page():
             DirectSale.invoice_id.is_(None)
         )
 
-    if filter_category and filter_category in SALE_CATEGORY_CHOICES:
+    categories = get_sale_categories()
+    active_codes = {code for code, _name in categories}
+    if filter_category and filter_category in active_codes:
         sales_q = sales_q.filter(DirectSale.category == filter_category)
 
     if filter_material:
@@ -122,7 +125,6 @@ def direct_sales_page():
     # Get GRNs for selection
     grns = GRN.query.filter_by(is_void=False).options(selectinload(GRN.items)).order_by(GRN.date_posted.desc()).limit(100).all()
     # Keep sales categories concise and business-focused.
-    categories = SALE_CATEGORY_CHOICES
     client_name_prefill = request.args.get('client_name', '').strip()
     next_auto = peek_next_bill_no(AUTO_BILL_NAMESPACES['DIRECT_SALE'])
 
@@ -273,6 +275,7 @@ def direct_sales_page():
                            booked_client_codes=booked_client_codes,
                            delivery_persons=delivery_persons,
                            categories=categories,
+                           payment_methods=get_payment_methods(),
                            next_auto=next_auto,
                            client_name_prefill=client_name_prefill,
                            stats=stats,

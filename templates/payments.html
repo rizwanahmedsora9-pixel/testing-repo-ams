@@ -103,11 +103,22 @@
             <label class="text-white-50 small fw-bold mb-1">Payment Type</label>
             <select name="method" class="form-select bg-dark text-white border-secondary">
                 <option value="">All</option>
+                {% if payment_methods %}
+                {% for method_code, method_label in payment_methods %}
+                <option value="{{ method_code }}" {% if method_filter == method_code %}selected{% endif %}>{{ method_label }}</option>
+                {% endfor %}
+                {# Legacy filter values keep their own selectable option. #}
+                {% set _filter_stored = (method_filter or '')|trim %}
+                {% if _filter_stored and _filter_stored not in payment_methods|map(attribute='0')|list %}
+                <option value="{{ _filter_stored }}" selected>{{ _filter_stored }}</option>
+                {% endif %}
+                {% else %}
                 <option value="Cash" {% if method_filter == 'Cash' %}selected{% endif %}>Cash</option>
                 <option value="Bank" {% if method_filter == 'Bank' %}selected{% endif %}>Bank Transfer</option>
                 <option value="Check" {% if method_filter == 'Check' %}selected{% endif %}>Check</option>
                 <option value="Cheque" {% if method_filter == 'Cheque' %}selected{% endif %}>Cheque</option>
                 <option value="Bank Transfer" {% if method_filter == 'Bank Transfer' %}selected{% endif %}>Bank Transfer (Legacy)</option>
+                {% endif %}
             </select>
         </div>
         <div class="col-6 col-md-1">
@@ -357,9 +368,15 @@
                 <div class="mb-3">
                     <label class="text-white-50 small fw-bold mb-1">METHOD</label>
                     <select name="method" class="form-select bg-dark text-white border-secondary customer-method-select" data-target="#addCustomerBankDetails" data-cash-target="#addCustomerCashDetails">
+                        {% if payment_methods %}
+                        {% for method_code, method_label in payment_methods %}
+                        <option value="{{ method_code }}">{{ method_label }}</option>
+                        {% endfor %}
+                        {% else %}
                         <option value="Cash">Cash</option>
                         <option value="Bank">Bank Transfer</option>
                         <option value="Check">Check</option>
+                        {% endif %}
                     </select>
                 </div>
                 <div id="addCustomerCashDetails" style="display: block;">
@@ -492,9 +509,15 @@
                 <div class="mb-3">
                     <label class="text-white-50 small fw-bold mb-1">METHOD</label>
                     <select name="method" class="form-select bg-dark text-white border-secondary supplier-method-select" data-target="#addSupplierBankDetails">
+                        {% if payment_methods %}
+                        {% for method_code, method_label in payment_methods %}
+                        <option value="{{ method_code }}">{{ method_label }}</option>
+                        {% endfor %}
+                        {% else %}
                         <option value="Cash">Cash</option>
-                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Bank">Bank Transfer</option>
                         <option value="Check">Check</option>
+                        {% endif %}
                     </select>
                 </div>
                 <div id="addSupplierBankDetails" style="display: none;">
@@ -564,9 +587,19 @@
                 <div class="mb-3">
                     <label class="text-white-50 small fw-bold mb-1">METHOD</label>
                     <select name="method" class="form-select bg-dark text-white border-secondary customer-method-select" data-target="#editCustomerBankDetails{{ payment.id }}" data-cash-target="#editCustomerCashDetails{{ payment.id }}">
+                        {% if payment_methods %}
+                        {% for method_code, method_label in payment_methods %}
+                        <option value="{{ method_code }}" {% if (payment.method or 'Cash') == method_code %}selected{% endif %}>{{ method_label }}</option>
+                        {% endfor %}
+                        {% set _stored = (payment.method or '')|trim %}
+                        {% if _stored and _stored not in payment_methods|map(attribute='0')|list %}
+                        <option value="{{ _stored }}" selected>{{ _stored }}</option>
+                        {% endif %}
+                        {% else %}
                         <option value="Cash" {% if payment.method == 'Cash' %}selected{% endif %}>Cash</option>
                         <option value="Bank" {% if payment.method == 'Bank' %}selected{% endif %}>Bank Transfer</option>
                         <option value="Check" {% if payment.method == 'Check' %}selected{% endif %}>Check</option>
+                        {% endif %}
                     </select>
                 </div>
                 <div id="editCustomerCashDetails{{ payment.id }}" style="display: {{ 'block' if payment.method in ['Cash', 'Cash Sale'] else 'none' }};">
@@ -674,12 +707,22 @@
                 <div class="mb-3">
                     <label class="text-white-50 small fw-bold mb-1">METHOD</label>
                     <select name="method" class="form-select bg-dark text-white border-secondary supplier-method-select" data-target="#editSupplierBankDetails{{ p.id }}">
+                        {% if payment_methods %}
+                        {% for method_code, method_label in payment_methods %}
+                        <option value="{{ method_code }}" {{ 'selected' if (p.method or '') == method_code }}>{{ method_label }}</option>
+                        {% endfor %}
+                        {% set _stored = (p.method or '')|trim %}
+                        {% if _stored and _stored not in payment_methods|map(attribute='0')|list %}
+                        <option value="{{ _stored }}" selected>{{ _stored }}</option>
+                        {% endif %}
+                        {% else %}
                         <option value="Cash" {{ 'selected' if p.method == 'Cash' }}>Cash</option>
                         <option value="Bank Transfer" {{ 'selected' if p.method == 'Bank Transfer' }}>Bank Transfer</option>
                         <option value="Check" {{ 'selected' if p.method == 'Check' }}>Check</option>
+                        {% endif %}
                     </select>
                 </div>
-                <div id="editSupplierBankDetails{{ p.id }}" style="display: {{ 'block' if p.method == 'Bank Transfer' else 'none' }};">
+                <div id="editSupplierBankDetails{{ p.id }}" style="display: {{ 'block' if p.method in ['Bank', 'Bank Transfer'] else 'none' }};">
                     <div class="mb-3"><label class="text-white-50 small fw-bold mb-1">Bank Name</label><input type="text" name="bank_name" class="form-control bg-dark text-white border-secondary" value="{{ p.bank_name or '' }}"></div>
                     <div class="mb-3"><label class="text-white-50 small fw-bold mb-1">Account Name</label><input type="text" name="account_name" class="form-control bg-dark text-white border-secondary" value="{{ p.account_name or '' }}"></div>
                     <div class="mb-3"><label class="text-white-50 small fw-bold mb-1">Account No</label><input type="text" name="account_no" class="form-control bg-dark text-white border-secondary" value="{{ p.account_no or '' }}"></div>
@@ -812,7 +855,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const toggleTarget = () => {
             const targetId = select.getAttribute('data-target');
             const node = document.querySelector(targetId);
-            if (node) node.style.display = select.value === 'Bank Transfer' ? 'block' : 'none';
+            if (node) node.style.display = ['Bank', 'Bank Transfer'].includes(select.value) ? 'block' : 'none';
         };
         select.addEventListener('change', toggleTarget);
         toggleTarget();
@@ -830,7 +873,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const accName = form.querySelector('input[name="account_name"]');
             const accNo = form.querySelector('input[name="account_no"]');
             if (methodSel) {
-                methodSel.value = (cat === 'bank') ? 'Bank Transfer' : 'Cash';
+                methodSel.value = (cat === 'bank') ? 'Bank' : 'Cash';
                 methodSel.dispatchEvent(new Event('change'));
             }
             if (bankName) bankName.value = opt.dataset.bank || '';

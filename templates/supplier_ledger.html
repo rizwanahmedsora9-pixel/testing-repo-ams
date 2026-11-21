@@ -295,12 +295,22 @@
                                         <div class="mb-3">
                                             <label class="text-white-50 small fw-bold mb-1">Method</label>
                                             <select name="method" class="form-select bg-dark text-white border-secondary payment-method-select" data-target="#editBankDetails{{ row.id }}">
+                                                {% if payment_methods %}
+                                                {% for method_code, method_label in payment_methods %}
+                                                <option value="{{ method_code }}" {{ 'selected' if row.payment_obj.method == method_code }}>{{ method_label }}</option>
+                                                {% endfor %}
+                                                {% set _stored = (row.payment_obj.method or '')|trim %}
+                                                {% if _stored and _stored not in payment_methods|map(attribute='0')|list %}
+                                                <option value="{{ _stored }}" selected>{{ _stored }}</option>
+                                                {% endif %}
+                                                {% else %}
                                                 <option value="Cash" {{ 'selected' if row.payment_obj.method == 'Cash' }}>Cash</option>
                                                 <option value="Bank Transfer" {{ 'selected' if row.payment_obj.method == 'Bank Transfer' }}>Bank Transfer</option>
                                                 <option value="Check" {{ 'selected' if row.payment_obj.method == 'Check' }}>Check</option>
+                                                {% endif %}
                                             </select>
                                         </div>
-                                        <div id="editBankDetails{{ row.id }}" style="display: {{ 'block' if row.payment_obj.method == 'Bank Transfer' else 'none' }};">
+                                        <div id="editBankDetails{{ row.id }}" style="display: {{ 'block' if row.payment_obj.method in ['Bank', 'Bank Transfer'] else 'none' }};">
                                             <div class="mb-3"><label class="text-white-50 small fw-bold mb-1">Bank Name</label><input type="text" name="bank_name" class="form-control bg-dark text-white border-secondary" value="{{ row.payment_obj.bank_name or '' }}"></div>
                                             <div class="mb-3"><label class="text-white-50 small fw-bold mb-1">Account Name</label><input type="text" name="account_name" class="form-control bg-dark text-white border-secondary" value="{{ row.payment_obj.account_name or '' }}"></div>
                                             <div class="mb-3"><label class="text-white-50 small fw-bold mb-1">Account No</label><input type="text" name="account_no" class="form-control bg-dark text-white border-secondary" value="{{ row.payment_obj.account_no or '' }}"></div>
@@ -380,9 +390,15 @@
                 <div class="mb-3">
                     <label class="text-white-50 small fw-bold mb-1">Method</label>
                     <select name="method" class="form-select bg-dark text-white border-secondary payment-method-select" data-target="#addBankDetails">
+                        {% if payment_methods %}
+                        {% for method_code, method_label in payment_methods %}
+                        <option value="{{ method_code }}">{{ method_label }}</option>
+                        {% endfor %}
+                        {% else %}
                         <option value="Cash">Cash</option>
                         <option value="Bank Transfer">Bank Transfer</option>
                         <option value="Check">Check</option>
+                        {% endif %}
                     </select>
                 </div>
                 <div id="addBankDetails" style="display: none;">
@@ -412,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.payment-method-select').forEach(select => {
         select.addEventListener('change', function() {
             const targetId = this.getAttribute('data-target');
-            document.querySelector(targetId).style.display = this.value === 'Bank Transfer' ? 'block' : 'none';
+            document.querySelector(targetId).style.display = ['Bank', 'Bank Transfer'].includes(this.value) ? 'block' : 'none';
         });
     });
 
@@ -429,7 +445,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const accNo = form.querySelector('input[name="account_no"]');
 
             if (methodSel) {
-                methodSel.value = (cat === 'bank') ? 'Bank Transfer' : 'Cash';
+                methodSel.value = (cat === 'bank') ? 'Bank' : 'Cash';
                 methodSel.dispatchEvent(new Event('change'));
             }
             if (bankName) bankName.value = opt.dataset.bank || '';

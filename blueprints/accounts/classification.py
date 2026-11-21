@@ -24,6 +24,18 @@ upgrade.  The legacy columns themselves are never deleted.
 """
 from __future__ import annotations
 
+# The classification registry is backed by the item_definition table (seeded
+# from the seed dict below).  This module keeps the seed dict as the fallback so
+# the app always renders the same dropdowns even before/without the database.
+import time as _time
+import threading as _threading
+
+_CACHE_TTL_SECONDS = 2.0
+_CACHE_LOCK = _threading.Lock()
+_CACHE_DICT = None
+_CACHE_TS = 0.0
+
+
 # Channel / medium vocabulary.  ``ledger_only`` means the balance is tracked on
 # the account ledger only (no physical cash / bank / wallet instrument).
 CHANNELS = ("cash", "bank", "digital_wallet", "ledger_only", "other")
@@ -73,7 +85,7 @@ def _node(channel, entity="none"):
 
 
 # The authoritative hierarchy.  Keys are (Category, Subcategory, Account Type).
-CLASSIFICATION = {
+CLASSIFICATION_SEED = {
     "Assets": {
         "label": "Assets",
         "description": "Money, funds, or value owned by the business or receivable by the business.",
@@ -267,6 +279,18 @@ CLASSIFICATION = {
                 "label": "Other Expenses",
                 "account_types": {"Other Expense": _node("ledger_only")},
             },
+            # --- Business-specific seeds (user-editable; added via the Item
+            # Definitions screen).  Staff Food and Fuel are ordinary operating
+            # expenses; they are NOT inventory.  resale_allowed=False matches
+            # their intent: non-resale business expenses.
+            "Staff Food": {
+                "label": "Staff Food",
+                "account_types": {"Staff Food Expense": _node("ledger_only", "worker")},
+            },
+            "Fuel": {
+                "label": "Fuel",
+                "account_types": {"Fuel Expense": _node("ledger_only")},
+            },
         },
     },
     "External / Clearing": {
@@ -294,19 +318,57 @@ CLASSIFICATION = {
 }
 
 
+
+def _load_classification():
+    """Return the active classification dict (table-backed, seed fallback)."""
+    global _CACHE_DICT, _CACHE_TS
+    now = _time.time()
+    if _CACHE_DICT is not None and (now - _CACHE_TS) < _CACHE_TTL_SECONDS:
+        return _CACHE_DICT
+    with _CACHE_LOCK:
+        now = _time.time()
+        if _CACHE_DICT is not None and (now - _CACHE_TS) < _CACHE_TTL_SECONDS:
+            return _CACHE_DICT
+        try:
+            from app.services.item_definitions import build_classification
+            built = build_classification()
+            if built:
+                _CACHE_DICT = built
+                _CACHE_TS = now
+                return _CACHE_DICT
+        except Exception:
+            pass
+        _CACHE_DICT = CLASSIFICATION_SEED
+        _CACHE_TS = now
+        return _CACHE_DICT
+
+
+def clear_cache():
+    """Invalidate the classification cache (called after definition edits)."""
+    global _CACHE_DICT, _CACHE_TS
+    with _CACHE_LOCK:
+        _CACHE_DICT = None
+        _CACHE_TS = 0.0
+
+
+# ---------------------------------------------------------------------------
+# Public API (table-backed; falls back to the seed dict)
+# ---------------------------------------------------------------------------
+
+
 def categories():
     """Return ordered list of category names."""
-    return list(CLASSIFICATION.keys())
+    return list(_load_classification().keys())
 
 
 def category_description(category):
-    cat = CLASSIFICATION.get(category)
+    cat = _load_classification().get(category)
     return cat["description"] if cat else ""
 
 
 def subcategories(category):
     """Return ordered list of subcategory names for a category (or [] if invalid)."""
-    cat = CLASSIFICATION.get(category)
+    cat = _load_classification().get(category)
     if not cat:
         return []
     return list(cat["subcategories"].keys())
@@ -314,7 +376,7 @@ def subcategories(category):
 
 def account_types(category, subcategory):
     """Return ordered list of account type names for a (category, subcategory)."""
-    cat = CLASSIFICATION.get(category)
+    cat = _load_classification().get(category)
     if not cat:
         return []
     sub = cat["subcategories"].get(subcategory)
@@ -325,7 +387,7 @@ def account_types(category, subcategory):
 
 def resolve_node(category, subcategory, account_type):
     """Return the leaf definition dict for a classification triple, or None."""
-    cat = CLASSIFICATION.get(category)
+    cat = _load_classification().get(category)
     if not cat:
         return None
     sub = cat["subcategories"].get(subcategory)
@@ -356,6 +418,13 @@ def required_entity(category, subcategory, account_type):
 def validate_channel(category, subcategory, account_type, channel):
     """Return True if ``channel`` is permitted for the classification."""
     return channel in allowed_channels(category, subcategory, account_type)
+
+
+# The authoritative nesting for the seed dict (fallback / fresh installs).
+# Consumers that need the *live* registry get it via the table-backed public
+# API above (categories(), subcategories(), account_types(), resolve_node(),
+# registry_json()).  New code must use that API, not this constant.
+CLASSIFICATION = CLASSIFICATION_SEED
 
 
 # ---------------------------------------------------------------------------
@@ -514,7 +583,7 @@ def registry_json():
     trip.
     """
     out = {"categories": []}
-    for cat_name, cat in CLASSIFICATION.items():
+    for cat_name, cat in _load_classification().items():
         cat_node = {
             "name": cat_name,
             "label": cat.get("label", cat_name),

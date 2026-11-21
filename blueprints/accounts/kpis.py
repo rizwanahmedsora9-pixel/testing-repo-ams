@@ -1,5 +1,6 @@
 """kpis — split from accounts.py."""
 from ._common import *  # noqa
+from app.services.item_definitions import get_payment_methods
 
 @accounts_bp.route('/api/kpi/client_payments')
 @login_required
@@ -313,7 +314,8 @@ def kpi_client_payments():
         date_from=date_from,
         date_to=date_to_excl - timedelta(days=1),
         search=search,
-        method_f=method_f
+        method_f=method_f,
+        payment_methods=get_payment_methods()
     )
 
 
@@ -412,7 +414,8 @@ def kpi_supplier_payments():
         date_from=date_from,
         date_to=date_to_excl - timedelta(days=1),
         search=search,
-        method_f=method_f
+        method_f=method_f,
+        payment_methods=get_payment_methods()
     )
 
 
@@ -511,7 +514,8 @@ def kpi_expenditures():
         date_from=date_from,
         date_to=date_to_excl - timedelta(days=1),
         search=search,
-        method_f=method_f
+        method_f=method_f,
+        payment_methods=get_payment_methods()
     )
 
 

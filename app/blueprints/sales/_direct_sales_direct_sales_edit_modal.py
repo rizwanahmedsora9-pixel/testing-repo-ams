@@ -1,5 +1,6 @@
 """Lazy direct-sale edit modal used by the paginated list."""
 from ._common import *  # noqa
+from app.services.item_definitions import get_payment_methods, get_sale_categories
 
 
 @bp.route('/direct_sales/<int:sale_id>/edit-modal')
@@ -93,6 +94,8 @@ def direct_sale_edit_modal(sale_id):
         grns=grns,
         accounts=accounts,
         delivery_allocations_by_sale={sale.id: delivery_allocations},
+        payment_methods=get_payment_methods(),
+        categories=get_sale_categories(),
         delivery_rent_totals_by_sale={sale.id: rent_total},
         sale_client_code_by_id={sale.id: matched_client.code if matched_client else sale.client_code},
         sale_alt_material_by_product=alt_by_delivered,

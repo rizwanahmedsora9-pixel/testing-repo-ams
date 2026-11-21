@@ -466,6 +466,18 @@ SIDEBAR_LINKS: Tuple[NavLink, ...] = (
         description="Logins, entries added/edited/deleted, page views, imports, errors, server logs and live users.",
     ),
     NavLink(
+        key="item_definitions",
+        label="Item Definitions",
+        icon="bi-list-stars",
+        endpoint="system.item_definitions_page",
+        fallback_url="/item-definitions",
+        exact=("/item-definitions",),
+        prefix=("/item-definitions",),
+        perm=_only("can_access_settings"),
+        default_category="system",
+        description="Manage the business vocabulary: account classification, sale categories, charge types and payment methods.",
+    ),
+    NavLink(
         key="settings",
         label="Settings",
         icon="bi-gear",

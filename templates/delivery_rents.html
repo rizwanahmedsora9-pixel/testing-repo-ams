@@ -326,10 +326,16 @@
                     <div class="col-6">
                         <label class="text-white-50 small fw-bold mb-1">PAYMENT METHOD</label>
                         <select name="method" class="form-select bg-dark text-white border-secondary rent-method">
+                            {% if payment_methods %}
+                            {% for method_code, method_label in payment_methods %}
+                            <option value="{{ method_code }}">{{ method_label }}</option>
+                            {% endfor %}
+                            {% else %}
                             <option value="Cash">Cash</option>
                             <option value="Bank">Bank</option>
                             <option value="Check">Check</option>
                             <option value="Online">Online</option>
+                            {% endif %}
                         </select>
                     </div>
                     <div class="col-6">
@@ -396,10 +402,16 @@
                     <div class="col-6">
                         <label class="text-white-50 small fw-bold mb-1">PAYMENT METHOD</label>
                         <select name="method" class="form-select bg-dark text-white border-secondary rent-method">
+                            {% if payment_methods %}
+                            {% for method_code, method_label in payment_methods %}
+                            <option value="{{ method_code }}">{{ method_label }}</option>
+                            {% endfor %}
+                            {% else %}
                             <option value="Cash">Cash</option>
                             <option value="Bank">Bank</option>
                             <option value="Check">Check</option>
                             <option value="Online">Online</option>
+                            {% endif %}
                         </select>
                     </div>
                     <div class="col-6">

@@ -1,6 +1,12 @@
 """grn — split from ops.py."""
 from ._common import *  # noqa
 from app.services.grn_costing import charge_billed_to_supplier
+def _charge_type_labels():
+    """Active GRN charge-type labels from Item Definitions (code-keyed)."""
+    from app.services.item_definitions import get_charge_type_labels
+    return get_charge_type_labels()
+
+
 from app.services.grn_consumption import grn_consumption_for_page
 from app.services.grn_costing import prime_grn_lines
 from app.services.grn_costs import (
@@ -473,6 +479,7 @@ def grn():
 
     return render_template(
         'grn_wizard.html',
+        charge_labels=_charge_type_labels(),
         grns=grns,
         grn_pagination=grn_pagination,
         page=page,
